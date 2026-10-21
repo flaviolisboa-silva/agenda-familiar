@@ -12,29 +12,22 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Estilização CSS para Ajustes de Layout Mobile e Redução do Espaço Superior
+# 2. Estilização CSS para Ajustes de Layout Mobile
 st.markdown("""
     <style>
-        /* Reduz o espaço branco no topo da página */
         .block-container {
             padding-top: 1rem !important;
             padding-bottom: 1rem !important;
             padding-left: 1rem !important;
             padding-right: 1rem !important;
         }
-        
-        /* Reduz o espaçamento entre elementos verticais */
         div[data-testid="stVerticalBlock"] > div {
             gap: 0.5rem !important;
         }
-        
-        /* Ajusta as colunas dos filtros para exibição lado a lado em telas menores */
         [data-testid="column"] {
             min-width: 0px !important;
             flex: 1 1 0% !important;
         }
-
-        /* Oculta o menu padrão do Streamlit para visual limpo */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
     </style>
@@ -64,13 +57,15 @@ if not st.session_state["logado"]:
         if submit_login:
             conn = get_connection()
             c = conn.cursor()
-            c.execute("SELECT * FROM usuarios WHERE usuario = ? AND senha = ?", (usuario, hash_senha(senha)))
+            # Consulta compatível com a tabela original que inclui o campo perfil
+            c.execute("SELECT id, usuario, perfil FROM usuarios WHERE usuario = ? AND senha = ?", (usuario, hash_senha(senha)))
             user = c.fetchone()
             conn.close()
             
             if user:
                 st.session_state["logado"] = True
-                st.session_state["usuario"] = usuario
+                st.session_state["usuario"] = user[1]
+                st.session_state["perfil"] = user[2]
                 st.rerun()
             else:
                 st.error("Usuário ou senha incorretos.")
@@ -79,7 +74,6 @@ if not st.session_state["logado"]:
 # 5. Topo da Aplicação
 st.title("📅 Agenda Familiar")
 
-# Abas Principais
 aba1, aba2, aba3 = st.tabs(["📅 Calendário", "📊 Relatórios", "⚙️ Administração"])
 
 # ---------------------------------------------------------
@@ -91,7 +85,6 @@ with aba1:
     if st.button("➕ Criar Evento", use_container_width=True):
         st.session_state["mostrar_novo_evento"] = True
 
-    # Modal / Formulário para Novo Evento
     if st.session_state.get("mostrar_novo_evento", False):
         with st.expander("Cadastrar Novo Evento", expanded=True):
             with st.form("form_evento"):
@@ -117,7 +110,6 @@ with aba1:
 
     st.markdown("---")
 
-    # FILTROS ORGANIZADOS LADO A LADO (4 Colunas na mesma linha)
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -129,7 +121,6 @@ with aba1:
     with col4:
         categ_sel = st.selectbox("Categoria", ["Todas", "Saúde", "Escola", "Lazer", "Financeiro", "Outros"])
 
-    # Consulta dos Eventos com Filtros
     conn = get_connection()
     query = "SELECT id, titulo, data, integrante, categoria, descricao FROM eventos WHERE 1=1"
     params = []
@@ -143,7 +134,7 @@ with aba1:
     if integ_sel != "Todos":
         query += " AND integrante = ?"
         params.append(integ_sel)
-    if categ_sel != "Todas":
+    if categ_sel != "Todos":
         query += " AND categoria = ?"
         params.append(categ_sel)
 
@@ -152,7 +143,6 @@ with aba1:
     df_eventos = pd.read_sql_query(query, conn, params=params)
     conn.close()
 
-    # Exibição dos Eventos
     if not df_eventos.empty:
         for idx, row in df_eventos.iterrows():
             with st.container():
@@ -184,7 +174,7 @@ with aba2:
 # ---------------------------------------------------------
 with aba3:
     st.subheader("Configurações do Sistema")
-    st.write(f"Usuário conectado: **{st.session_state.get('usuario', '')}**")
+    st.write(f"Usuário conectado: **{st.session_state.get('usuario', '')}** (Perfil: **{st.session_state.get('perfil', '')}**)")
     if st.button("Sair / Logout"):
         st.session_state["logado"] = False
         st.rerun()
