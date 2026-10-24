@@ -467,8 +467,12 @@ st.markdown(
     }
 
     /* Aproxima o título do conteúdo anterior */
+    div[data-testid="stMarkdownContainer"] h1,
+    div[data-testid="stMarkdownContainer"] h2,
     div[data-testid="stMarkdownContainer"] h3 {
-        margin-top: 0.2rem !important;
+        line-height: 1.4 !important;
+        overflow: visible !important;
+        margin-top: 0.5rem !important;
         margin-bottom: 0.4rem !important;
     }
     </style>
