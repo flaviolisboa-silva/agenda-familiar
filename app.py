@@ -1121,7 +1121,7 @@ if secao == "📊 Relatórios":
         # --- OCUPAÇÃO POR DATA ---
         st.markdown("### 🔍 Ocupação por Data")
         st.caption(
-            "🟢 Dia livre | 🔴 Dia ocupado. "
+            "🔴 Dia ocupado. "
 
         )
 
